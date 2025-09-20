@@ -41,9 +41,10 @@ def upload_to_pinata(file_path, api_key, api_secret):
 
 # -------------------- Certificate Generation -------------------- #
 def generate_certificate_with_qr(file_path, uid, candidate_name, course_name, org_name, logo_filename, certificate_id):
-    # Generate QR code
+    # Generate QR code with verifier link
+    qr_url = f"http://localhost:8503/verifier?method=id&cert_id={certificate_id}"
     qr = qrcode.QRCode(version=1, box_size=8, border=2)
-    qr.add_data(certificate_id)
+    qr.add_data(qr_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill="black", back_color="white")
     qr_path = "qr.png"
