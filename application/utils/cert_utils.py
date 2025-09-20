@@ -1,21 +1,28 @@
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import pdfplumber
+from pathlib import Path
 
-def generate_certificate(output_path, uid, candidate_name, course_name, org_name, institute_logo_path):
-    # Create a PDF document
+def get_asset_path(filename: str) -> str:
+    """Return the absolute path to an asset in the assets folder."""
+    base_dir = Path(__file__).parent.parent  # points to 'application/' folder
+    asset_path = base_dir / "assets" / filename
+    if not asset_path.exists():
+        raise FileNotFoundError(f"Asset not found: {asset_path}")
+    return str(asset_path)
+
+def generate_certificate(output_path, uid, candidate_name, course_name, org_name, institute_logo_filename):
     doc = SimpleDocTemplate(output_path, pagesize=letter)
-
-    # Create a list to hold the elements of the PDF
     elements = []
 
-    # Add institute logo and institute name
-    if institute_logo_path:
-        logo = Image(institute_logo_path, width=150, height=150)
+    # Add institute logo
+    if institute_logo_filename:
+        abs_logo_path = get_asset_path(institute_logo_filename)
+        logo = RLImage(abs_logo_path, width=150, height=150)
         elements.append(logo)
 
-    # Add institute name
+    # Institute name
     institute_style = ParagraphStyle(
         "InstituteStyle",
         parent=getSampleStyleSheet()["Title"],
@@ -26,7 +33,7 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     institute = Paragraph(org_name, institute_style)
     elements.extend([institute, Spacer(1, 12)])
 
-    # Add title
+    # Title
     title_style = ParagraphStyle(
         "TitleStyle",
         parent=getSampleStyleSheet()["Title"],
@@ -37,7 +44,7 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
     title1 = Paragraph("Certificate of Completion", title_style)
     elements.extend([title1, Spacer(1, 6)])
 
-    # Add recipient name, UID, and course name with increased line space
+    # Recipient
     recipient_style = ParagraphStyle(
         "RecipientStyle",
         parent=getSampleStyleSheet()["BodyText"],
@@ -46,26 +53,23 @@ def generate_certificate(output_path, uid, candidate_name, course_name, org_name
         leading=18,
         alignment=1
     )
-
-    recipient_text = f"This is to certify that<br/><br/>\
-                     <font color='red'> {candidate_name} </font><br/>\
-                     with UID <br/> \
-                    <font color='red'> {uid} </font> <br/><br/>\
-                     has successfully completed the course:<br/>\
-                     <font color='blue'> {course_name} </font>"
-
+    recipient_text = f"""
+    This is to certify that<br/><br/>
+    <font color='red'>{candidate_name}</font><br/>
+    with UID<br/>
+    <font color='red'>{uid}</font><br/><br/>
+    has successfully completed the course:<br/>
+    <font color='blue'>{course_name}</font>
+    """
     recipient = Paragraph(recipient_text, recipient_style)
     elements.extend([recipient, Spacer(1, 12)])
 
-    # Build the PDF document
+    # Build PDF
     doc.build(elements)
-
     print(f"Certificate generated and saved at: {output_path}")
-
 
 def extract_certificate(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
-        # Extract text from each page
         text = ""
         for page in pdf.pages:
             text += page.extract_text()
@@ -77,4 +81,3 @@ def extract_certificate(pdf_path):
         course_name = lines[-1]
 
         return (uid, candidate_name, course_name, org_name)
-    

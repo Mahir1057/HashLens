@@ -1,5 +1,5 @@
 pdfplumber==0.10.3
-Pillow==10.1.0
+Pillow>=10.4.0
 Pyrebase4==4.7.1
 python-dotenv==1.0.0
 reportlab==4.0.7
